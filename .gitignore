@@ -2,3 +2,4 @@
 *.org
 test.yaml
 aws-parallelcluster/
+*.pem
