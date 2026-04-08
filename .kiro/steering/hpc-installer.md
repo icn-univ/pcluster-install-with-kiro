@@ -25,7 +25,7 @@
 1. 입문용 클러스터 (어느 과든 부담 없이 테스트)
    - 용도: 코드 테스트, 소규모 병렬 계산, 수업용
    - 관리 서버(Head Node): t3.medium
-   - 연산 서버(Compute): c7i.xlarge × 최대 4대
+   - 연산 서버(Compute): c7i.large × 최대 4대
    - 공유 저장소: EFS (용량 자동 확장)
    - 비용: 가장 저렴
 
@@ -39,12 +39,15 @@
 3. AI/딥러닝 클러스터 (반도체공학, 전기전자, 컴퓨터공학, 바이오 등)
    - 용도: 모델 학습, 데이터 분석
    - 관리 서버(Head Node): c7i.xlarge
-   - 연산 서버(Compute): g6.xlarge × 최대 4대
+   - 연산 서버(Compute): g6.xlarge × 최대 8대
    - 공유 저장소: FSx for Lustre 1.2TB (고성능 파일시스템)
    - 비용: 중~고
 
 4. 🛠️ 커스텀 클러스터 — 직접 설정
-9. 🗑️ 기존 클러스터 삭제
+   - Parallel Cluster 생성 시 선택 항목들을 모두 개별적으로 선택
+   - 전문가용 클러스터 생성
+
+9. 🗑️ 기존 생성된 클러스터 삭제
 
 번호를 선택해주세요!
 ```
@@ -57,8 +60,8 @@
 | 항목 | 1. 입문용 | 2. 전산 시뮬레이션 | 3. AI/딥러닝 |
 |------|-----------|-------------------|-------------|
 | HeadNode 인스턴스 | t3.medium | c7i.xlarge | c7i.xlarge |
-| Compute 인스턴스 | c7i.xlarge | c8i.48xlarge | g6.xlarge |
-| MaxCount | 4 | 8 | 4 |
+| Compute 인스턴스 | c7i.large | c8i.48xlarge | g6.xlarge |
+| MaxCount | 4 | 8 | 8 |
 | EFA | 미사용 | Enabled | 미사용 |
 | PlacementGroup | 미사용 | Enabled | 미사용 |
 | SharedStorage | Efs | FsxLustre 1.2TB | FsxLustre 1.2TB |
@@ -68,47 +71,7 @@
 아래 질문을 순서대로 진행합니다:
 
 1. 클러스터 이름
-2. 관리 서버(Head Node) 인스턴스 타입:
-   ```
-   번호  Head Node
-   1.   t3.medium (가벼운 작업, 저렴)
-   2.   c7i.xlarge (중간 규모) — 기본값
-   3.   직접 입력
-   ```
-3. 연산 서버(Compute Node) 인스턴스 타입:
-   ```
-   번호  용도                              추천 인스턴스     특징
-   1.   분자동역학, 유체역학, CFD, FEM     c8i.48xlarge    고성능 CPU, HPC 최적화
-   2.   딥러닝, AI, 모델 학습              g6.xlarge       GPU
-   3.   유전체, 바이오인포매틱스            r7i.48xlarge    대용량 메모리
-   4.   기후/날씨 시뮬레이션, 천문          hpc7a.48xlarge  AMD HPC 최적화, EFA (서울 리전 불가)
-   5.   반도체 시뮬레이션 (TCAD 등)        c8i.48xlarge    고성능 CPU, 대용량 메모리
-   6.   일반/기타                          c7i.xlarge      범용
-   ```
-   - 선택 후 현재 리전에서 해당 인스턴스 가용 여부를 `aws ec2 describe-instance-type-offerings`로 확인
-   - 미지원 시 안내하고 다른 인스턴스 선택 또는 리전 변경 제안
-4. 연산 서버 최대 수 (기본값: 4, 사용하지 않을 때는 자동으로 꺼진다고 안내)
-5. 공유 스토리지:
-   ```
-   번호  스토리지
-   1.   EFS (용량 자동 확장, 저렴) — 기본값
-   2.   FSx for Lustre (고성능 I/O)
-   ```
-   - FSx 선택 시 용량 질문 (기본값: 1200GB)
-6. 고속 네트워크(EFA):
-   ```
-   고속 네트워크(EFA)를 사용하시겠습니까?
-   (노드 간 병렬 통신이 필요한 경우 권장: CFD, FEM, 분자동역학 등)
-   1. 예 (EFA + PlacementGroup 활성화)
-   2. 아니오 — 기본값
-   ```
-7. 원격 데스크톱(DCV):
-   ```
-   웹 브라우저로 GUI 접속이 필요하신가요?
-   1. 예 (DCV 활성화)
-   2. 아니오 — 기본값
-   ```
-8. OS 선택:
+2. 관리 서버(Head Node)와 연산 서버(Compute Node)의 운영체제(OS) 선택:
    ```
    번호  OS
    1.   Amazon Linux 2 (기본값)
@@ -120,6 +83,80 @@
    7.   RHEL 9
    8.   Rocky 9
    ```
+3. 관리 서버(Head Node) 인스턴스 타입:
+   ```
+   번호  Head Node
+   1.   t3.medium (가벼운 작업, 저렴)
+   2.   c7i.xlarge (중간 규모) — 기본값
+   3.   직접 입력
+   ```
+4. 연산 서버(Compute Node) 인스턴스 타입:
+   ```
+   번호  용도                            추천 인스턴스        특징
+   1.   분자동역학, 유체역학, CFD, FEM      c8i.48xlarge     고성능 CPU, HPC 최적화
+   2.   딥러닝, AI, 모델 학습              g6.xlarge        GPU
+   3.   유전체, 바이오인포매틱스             r7i.48xlarge     대용량 메모리
+   4.   기후/날씨 시뮬레이션, 천문           hpc7a.48xlarge   AMD HPC 최적화, EFA (서울 리전 불가)
+   5.   반도체 시뮬레이션 (TCAD 등)         c8i.48xlarge     고성능 CPU, 대용량 메모리
+   6.   일반/기타                        c7i.xlarge       범용
+   7.   직접 입력
+   ```
+   - 선택 후 현재 리전에서 해당 인스턴스 가용 여부를 `aws ec2 describe-instance-type-offerings`로 확인
+   - 미지원 시 안내하고 다른 인스턴스 선택 또는 리전 변경 제안
+5. 연산 서버 최대 수 (기본값: 4, 사용하지 않을 때는 자동으로 꺼진다고 안내)
+6. 공유 스토리지:
+   ```
+   번호  스토리지
+   1.   EFS (용량 자동 확장, 저렴) — 기본값
+   2.   FSx for Lustre (고성능 I/O)
+   ```
+   - FSx 선택 시 용량 질문 (기본값: 1200GB)
+7. 고속 네트워크(EFA):
+   ```
+   고속 네트워크(EFA)를 사용하시겠습니까?
+   (노드 간 병렬 통신이 필요한 경우 권장: CFD, FEM, 분자동역학 등)
+   1. 예 (EFA + PlacementGroup 활성화)
+   2. 아니오 — 기본값
+   ```
+8. 원격 데스크톱(DCV):
+   ```
+   웹 브라우저로 GUI 접속이 필요하신가요?
+   1. 예 (DCV 활성화)
+   2. 아니오 — 기본값
+   ```
+
+## 예외 처리 규칙
+
+### 입력 검증
+- 클러스터 이름: 영문 소문자, 숫자, 하이픈만 허용. 잘못된 입력 시 규칙을 안내하고 재입력 요청
+- 번호 선택: 제시된 범위 밖의 번호 입력 시 "1~N번 중에서 선택해주세요!" 로 재질문
+- FSx 용량: 1,200의 배수가 아닌 값 입력 시 가장 가까운 유효 값 2개를 제시하고 선택 요청
+- MaxCount: 숫자가 아니거나 0 이하인 경우 재입력 요청
+
+### AWS CLI 실패 시
+- `aws sts get-caller-identity` 실패 → "AWS 자격증명이 설정되지 않았습니다. `aws configure`를 먼저 실행해주세요." 안내 후 **중단**
+- `aws ec2 describe-instance-type-offerings` 결과가 빈 배열 → 해당 인스턴스가 현재 리전에서 미지원. 다른 인스턴스 또는 리전 변경 선택지 제시
+- `pip3 install` 실패 → "Python 환경 문제일 수 있습니다. `python3 --version`을 확인해주세요." 안내
+
+### CloudFormation 스택 실패 시
+- 네트워크 스택(`{클러스터명}-network`) 생성 실패:
+  1. `aws cloudformation describe-stack-events --stack-name {클러스터명}-network --query "StackEvents[?ResourceStatus=='CREATE_FAILED']"` 로 실패 원인 조회
+  2. 원인을 한국어로 설명
+  3. 실패한 스택 정리: `aws cloudformation delete-stack --stack-name {클러스터명}-network`
+  4. **중단** (다음 단계로 진행하지 않음)
+- 클러스터 스택 생성 실패:
+  1. `pcluster describe-cluster --cluster-name {클러스터명} --region {리전}` 으로 실패 사유 확인
+  2. 원인을 한국어로 설명
+  3. "클러스터를 삭제하고 다시 시도하시겠습니까?" 확인
+  4. 삭제 시 `pcluster delete-cluster` 실행 후 네트워크 스택은 유지 (재사용 가능)
+
+### 이미 존재하는 리소스
+- 같은 이름의 클러스터가 이미 존재 → "이미 '{클러스터명}' 클러스터가 있습니다. 다른 이름을 입력해주세요." 로 재입력 요청
+- 같은 이름의 네트워크 스택이 이미 존재 → "기존 네트워크를 재사용하시겠습니까?" 확인 후, "예" 시 Outputs에서 서브넷 정보 추출하여 사용
+
+### pcluster CLI 주의사항
+- pcluster 명령어에 `--output json` 옵션을 사용하지 않는다 (pcluster는 기본 JSON 출력)
+- pcluster 출력을 파이프할 때 stderr에 `RequestsDependencyWarning`이 섞일 수 있으므로 항상 `2>/dev/null`로 stderr를 제거한다
 
 ## 배포 흐름 (프리셋/커스텀 공통)
 클러스터 번호와 이름이 결정되면 아래 6단계를 순서대로 실행합니다.
@@ -174,18 +211,18 @@
 - `sample-hpc-cluster.yaml` 템플릿의 변수를 치환하여 `./{클러스터명}-config.yaml` 생성
 - 치환할 변수:
   - `${REGION}` — 1단계에서 확인한 리전
-  - `${OS}` — 프리셋: alinux2 / 커스텀: 8번 질문
-  - `${HEAD_NODE_INSTANCE_TYPE}` — 프리셋: 표 참조 / 커스텀: 2번 질문
+  - `${OS}` — 프리셋: alinux2 / 커스텀: 2번 질문
+  - `${HEAD_NODE_INSTANCE_TYPE}` — 프리셋: 표 참조 / 커스텀: 3번 질문
   - `${KEY_NAME}` — 3단계에서 확인한 키페어 이름
   - `${PUBLIC_SUBNET_ID}` — 4단계 CloudFormation Outputs
-  - `${COMPUTE_INSTANCE_TYPE}` — 프리셋: 표 참조 / 커스텀: 3번 질문
-  - `${MAX_COUNT}` — 프리셋: 표 참조 / 커스텀: 4번 질문
+  - `${COMPUTE_INSTANCE_TYPE}` — 프리셋: 표 참조 / 커스텀: 4번 질문
+  - `${MAX_COUNT}` — 프리셋: 표 참조 / 커스텀: 5번 질문
   - `${PRIVATE_SUBNET_ID}` — 4단계 CloudFormation Outputs
-  - `${STORAGE_TYPE}` — 프리셋: 표 참조 / 커스텀: 5번 질문
+  - `${STORAGE_TYPE}` — 프리셋: 표 참조 / 커스텀: 6번 질문
 - 조건부 블록:
-  - EFA/PlacementGroup — 프리셋 2번 또는 커스텀 6번에서 "예" 선택 시 포함
+  - EFA/PlacementGroup — 프리셋 2번 또는 커스텀 7번에서 "예" 선택 시 포함
   - FsxLustreSettings — StorageType이 FsxLustre일 때만 포함 (StorageCapacity: 1200, DeploymentType: SCRATCH_2)
-  - DCV — 커스텀 7번에서 "예" 선택 시 HeadNode에 DCV 블록 포함
+  - DCV — 커스텀 8번에서 "예" 선택 시 HeadNode에 DCV 블록 포함
 - 공통 설정: Scheduler slurm, Queue 이름 compute, MinCount 0, RootVolume gp3, SSM 정책
 - 생성 후 주요 설정 요약을 한국어로 출력하고 확인 (Y/n)
 
