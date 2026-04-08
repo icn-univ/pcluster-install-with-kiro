@@ -1,0 +1,49 @@
+Region: ${REGION}
+Image:
+  Os: ${OS}
+HeadNode:
+  InstanceType: ${HEAD_NODE_INSTANCE_TYPE}
+  Networking:
+    SubnetId: ${PUBLIC_SUBNET_ID}
+  Ssh:
+    KeyName: ${KEY_NAME}
+  LocalStorage:
+    RootVolume:
+      VolumeType: gp3
+  Iam:
+    AdditionalIamPolicies:
+      - Policy: arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+Scheduling:
+  Scheduler: slurm
+  SlurmQueues:
+    - Name: compute
+      ComputeResources:
+        - Name: compute
+          Instances:
+            - InstanceType: ${COMPUTE_INSTANCE_TYPE}
+          MinCount: 0
+          MaxCount: ${MAX_COUNT}
+          # EFA: ${EFA_ENABLED} 일 때만 아래 블록 포함
+          # Efa:
+          #   Enabled: true
+      Networking:
+        SubnetIds:
+          - ${PRIVATE_SUBNET_ID}
+        # PlacementGroup: ${PLACEMENT_GROUP_ENABLED} 일 때만 아래 블록 포함
+        # PlacementGroup:
+        #   Enabled: true
+      Iam:
+        AdditionalIamPolicies:
+          - Policy: arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      ComputeSettings:
+        LocalStorage:
+          RootVolume:
+            VolumeType: gp3
+SharedStorage:
+  - Name: shared
+    StorageType: ${STORAGE_TYPE}
+    MountDir: /shared
+    # StorageType 이 FsxLustre 일 때만 아래 블록 포함
+    # FsxLustreSettings:
+    #   StorageCapacity: 1200
+    #   DeploymentType: SCRATCH_2

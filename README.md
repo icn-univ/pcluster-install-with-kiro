@@ -1,0 +1,96 @@
+# pcluster-install-with-kiro
+
+Kiro와 한국어로 대화하면서 AWS ParallelCluster(HPC 클러스터)를 쉽게 배포할 수 있는 프로젝트입니다.
+
+## 왜 만들었나요?
+
+대학 연구실에서 HPC 클러스터가 필요할 때, AWS 콘솔을 직접 다루거나 복잡한 CLI 명령어를 익히는 건 연구자에게 부담입니다. 이 프로젝트는 Kiro AI 어시스턴트가 대화형으로 클러스터 생성을 안내하고, 실제 배포까지 대신 처리해줍니다.
+
+- AWS 용어나 Shell 명령어를 몰라도 됩니다
+- 번호 선택만으로 클러스터를 구성할 수 있습니다
+- 모든 안내가 한국어로 제공됩니다
+
+## 대상 사용자
+
+- 대학 연구실 연구자 (각자 본인 AWS 계정 사용)
+- AWS/Shell 경험이 적은 비개발자
+
+## 사전 준비
+
+- AWS 계정 및 자격증명 설정 (`aws configure`)
+- [Kiro CLI](https://kiro.dev) 설치
+- Python 3.9 이상
+
+## 사용 방법
+
+1. 이 저장소를 클론합니다:
+   ```bash
+   git clone https://github.com/<your-username>/pcluster-install-with-kiro.git
+   cd pcluster-install-with-kiro
+   ```
+
+2. Kiro CLI를 실행합니다:
+   ```bash
+   kiro-cli chat
+   ```
+
+3. Kiro가 클러스터 프리셋을 안내합니다. 번호를 선택하세요:
+   ```
+   1. 🚀 입문용 클러스터 — 코드 테스트, 소규모 병렬 계산
+   2. 🔧 전산 시뮬레이션 클러스터 — FEM, CFD (ANSYS, OpenFOAM 등)
+   3. 🤖 AI/딥러닝 클러스터 — 모델 학습, 데이터 분석
+   4. 🛠️ 커스텀 클러스터 — 직접 설정
+   ```
+
+4. 클러스터 이름을 입력하면 Kiro가 6단계로 자동 배포합니다:
+   - AWS 계정 연결 확인
+   - pcluster CLI 설치 확인
+   - SSH 접속 키 확인
+   - 네트워크 생성 (VPC/서브넷)
+   - 클러스터 설정 파일 생성
+   - 클러스터 배포
+
+## 프리셋 클러스터
+
+| # | 이름 | 용도 | 관리 서버 | 연산 서버 | 공유 저장소 |
+|---|------|------|-----------|-----------|------------|
+| 1 | 입문용 | 코드 테스트, 수업용 | t3.medium | c7i.xlarge × 최대 4대 | EFS |
+| 2 | 전산 시뮬레이션 | FEM, CFD | c7i.xlarge | c8i.48xlarge × 최대 8대 | FSx Lustre 1.2TB |
+| 3 | AI/딥러닝 | 모델 학습, 데이터 분석 | c7i.xlarge | g6.xlarge × 최대 4대 | FSx Lustre 1.2TB |
+
+## 프로젝트 구조
+
+```
+├── PLAN.md                    # 상세 작업 계획
+├── sample-vpc-subnet.json     # VPC/서브넷 CloudFormation 템플릿
+├── sample-hpc-cluster.yaml    # 클러스터 설정 템플릿 (변수 치환 방식)
+└── README.md
+```
+
+- `sample-vpc-subnet.json` — 네트워크 생성에 사용되는 CloudFormation 템플릿. 새 VPC 생성 또는 기존 VPC 재사용을 지원합니다.
+- `sample-hpc-cluster.yaml` — ParallelCluster 설정 템플릿. 프리셋/커스텀 선택에 따라 변수가 치환되어 최종 config.yaml이 생성됩니다.
+
+## 커스텀 클러스터
+
+4번(커스텀)을 선택하면 아래 항목을 직접 설정할 수 있습니다:
+
+1. 클러스터 이름
+2. 관리 서버(Head Node) 인스턴스 타입
+3. 연산 서버(Compute Node) 인스턴스 타입 — 용도별 추천 제공
+4. 연산 서버 최대 수
+5. 공유 스토리지 (EFS / FSx for Lustre)
+6. 고속 네트워크 EFA (노드 간 병렬 통신)
+7. 원격 데스크톱 DCV (웹 브라우저 GUI 접속)
+8. 운영체제 선택
+
+## 클러스터 삭제
+
+⚠️ 사용이 끝나면 반드시 클러스터를 삭제하세요. (비용 발생 방지)
+
+```bash
+pcluster delete-cluster --cluster-name <클러스터명>
+```
+
+## 라이선스
+
+MIT

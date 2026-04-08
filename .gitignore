@@ -1,0 +1,4 @@
+*.bak*
+*.org
+test.yaml
+aws-parallelcluster/
