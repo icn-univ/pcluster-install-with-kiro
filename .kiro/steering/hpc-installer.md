@@ -150,7 +150,7 @@
   - .pem 파일 저장 안내 및 `chmod 400` 자동 적용
 
 ### [4/6] 네트워크 생성
-- 모범 사례: "관리 서버는 public 서브넷, 연산 서버는 private 서브넷에 배치합니다."
+- 모범 사례: "Head Node는 public 서브넷, 연산 서버는 private 서브넷에 배치합니다."
 - **프리셋(1~3번)**: `sample-vpc-subnet.json` CloudFormation 템플릿으로 VPC/서브넷 자동 생성
   ```bash
   aws cloudformation create-stack \
@@ -160,6 +160,7 @@
       ParameterKey=AvailabilityZone,ParameterValue={AZ} \
       ParameterKey=VpcName,ParameterValue=hpc-{클러스터명}-vpc
   ```
+  - 스택 생성 시작 후 "약 5분 정도 소요됩니다. 잠시만 기다려주세요 ⏳" 안내 문구를 출력
   - 스택 완료 후 Outputs에서 VpcId, PublicSubnetId, PrivateSubnetId 추출
 - **커스텀(4번)**: 기존 VPC 선택 or 새로 생성 선택
   - 새로 생성 시 동일한 CloudFormation 템플릿 사용
@@ -186,13 +187,27 @@
 
 ### [6/6] 클러스터 배포
 - `pcluster create-cluster --cluster-name {이름} --cluster-configuration {이름}-config.yaml` 실행
+- 생성 시작 후 안내:
+  ```
+  클러스터 생성은 약 10~15분 정도 소요됩니다. 상태를 확인하겠습니다... ⏳
+  💡 AWS 콘솔에서도 진행 현황을 확인할 수 있습니다:
+     👉 https://console.aws.amazon.com/cloudformation/home?region={리전}
+     스택 이름 "{클러스터명}"의 이벤트 탭에서 실시간 배포 상태를 볼 수 있습니다.
+  ```
 - `pcluster describe-cluster`로 1분마다 상태 확인
-- `CREATE_COMPLETE` 시:
+- `CREATE_COMPLETE` 시 (반드시 {이름}, {키페어}를 실제 값으로 치환하여 표시):
   ```
   ✅ 클러스터가 준비되었습니다!
 
   클러스터에 접속하려면:
      pcluster ssh --cluster-name {이름} -i ./{키페어}.pem
+
+  📋 접속 후 클러스터를 간단히 확인해보세요:
+     sinfo              — 파티션 및 노드 상태 확인
+     squeue             — 현재 실행 중인 작업 확인
+     module avail       — 사용 가능한 소프트웨어 모듈 (MPI 등)
+     df -hT             — 공유 파일시스템 용량 확인
+     showmount -e localhost — NFS 마운트 목록 확인
 
   ⚠️  사용이 끝나면 반드시 클러스터를 삭제하세요. (비용 발생 방지)
      pcluster delete-cluster --cluster-name {이름}

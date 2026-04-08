@@ -175,7 +175,17 @@
     },
     "NatEIPPublic": {
       "Properties": {
-        "Domain": "vpc"
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Sub": "${VpcName}-nat-eip" }
+          },
+          {
+            "Key": "Stack",
+            "Value": { "Ref": "AWS::StackId" }
+          }
+        ]
       },
       "Type": "AWS::EC2::EIP"
     },
@@ -189,7 +199,17 @@
         },
         "SubnetId": {
           "Ref": "Public"
-        }
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Sub": "${VpcName}-nat-gateway" }
+          },
+          {
+            "Key": "Stack",
+            "Value": { "Ref": "AWS::StackId" }
+          }
+        ]
       },
       "Type": "AWS::EC2::NatGateway"
     },
