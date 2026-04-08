@@ -153,7 +153,9 @@
 
 ### [4/6] 네트워크 생성
 - 모범 사례: "Head Node는 public 서브넷, 연산 서버는 private 서브넷에 배치합니다."
-- **프리셋(1~3번)**: `sample-vpc-subnet.json` CloudFormation 템플릿으로 VPC/서브넷 자동 생성
+- **프리셋(1~3번)**: 기존 VPC를 사용하지 않고, 클러스터 전용 신규 VPC를 자동 생성합니다.
+  1. 가용영역(AZ) 확인: `aws ec2 describe-availability-zones`로 현재 리전의 사용 가능한 AZ 목록을 조회하고, 첫 번째 AZ를 자동 선택 (사용자에게 별도 질문하지 않음)
+  2. 신규 VPC 생성: `sample-vpc-subnet.json` CloudFormation 템플릿으로 클러스터 전용 VPC + public/private 서브넷을 생성
   ```bash
   aws cloudformation create-stack \
     --stack-name {클러스터명}-network \
@@ -162,8 +164,8 @@
       ParameterKey=AvailabilityZone,ParameterValue={AZ} \
       ParameterKey=VpcName,ParameterValue=hpc-{클러스터명}-vpc
   ```
-  - 스택 생성 시작 후 "약 5분 정도 소요됩니다. 잠시만 기다려주세요 ⏳" 안내 문구를 출력
-  - 스택 완료 후 Outputs에서 VpcId, PublicSubnetId, PrivateSubnetId 추출
+  3. 스택 생성 시작 후 "약 5분 정도 소요됩니다. 잠시만 기다려주세요 ⏳" 안내 문구를 출력
+  4. 스택 완료 후 Outputs에서 VpcId, PublicSubnetId, PrivateSubnetId 추출
 - **커스텀(4번)**: 기존 VPC 선택 or 새로 생성 선택
   - 새로 생성 시 동일한 CloudFormation 템플릿 사용
   - 기존 VPC 선택 시 VpcId, InternetGatewayId를 파라미터로 전달
@@ -196,7 +198,10 @@
      👉 https://console.aws.amazon.com/cloudformation/home?region={리전}
      스택 이름 "{클러스터명}"의 이벤트 탭에서 실시간 배포 상태를 볼 수 있습니다.
   ```
-- `pcluster describe-cluster`로 1분마다 상태 확인
+- `aws cloudformation wait stack-create-complete --stack-name {클러스터명} --region {리전}`으로 배포 완료 대기
+- 완료 후 `pcluster describe-cluster`로 최종 상태 확인
+  - 주의: pcluster CLI는 aws CLI와 다르므로 `--output json` 옵션을 사용하지 않는다 (pcluster는 기본 JSON 출력)
+  - 주의: pcluster 출력을 파이프할 때 `RequestsDependencyWarning` 경고가 stdout에 섞일 수 있으므로, `2>/dev/null`로 stderr를 제거하거나 `grep -v Warning` 등으로 필터링한다
 - `CREATE_COMPLETE` 시 (반드시 {이름}, {키페어}를 실제 값으로 치환하여 표시):
   ```
   ✅ 클러스터가 준비되었습니다!
