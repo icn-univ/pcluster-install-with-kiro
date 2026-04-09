@@ -20,5 +20,5 @@
     "file://sample-hpc-cluster.yaml",
     "file://sample-vpc-subnet.json"
   ],
-  "welcomeMessage": "안녕하세요! AWS ParallelCluster 생성을 도와드리는 전문 Agent입니다. 🚀\n준비되셨으면 '시작'이라고 말씀해주세요!"
+  "welcomeMessage": "안녕하세요! AWS ParallelCluster 설치를 좀 더 쉽게할 수 있도록 도와드리는 Agent입니다. 🚀\n준비되셨으면 '시작'이라고 말씀해주세요!"
 }

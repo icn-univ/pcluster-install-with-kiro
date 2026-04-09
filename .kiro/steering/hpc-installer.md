@@ -188,7 +188,20 @@
 ### [2/6] pcluster CLI 설치 확인
 - `pcluster version` 실행
 - 설치되어 있으면 버전 확인 후 완료
-- 미설치 시 버전 선택 후 `pip3 install aws-parallelcluster==<version>` 실행
+- 미설치 시:
+  1. `pip3 index versions aws-parallelcluster 2>/dev/null | head -2` 로 PyPI에서 최신 버전을 실시간 조회
+  2. PyPI JSON API(`https://pypi.org/pypi/aws-parallelcluster/json`)에서 각 버전의 릴리즈 날짜를 조회
+  3. 3.14.0 이상의 정식 버전만 필터링 (RC 등 pre-release 버전 제외: 버전 숫자가 모두 digit인 것만 포함)하여 번호 선택 방식으로 제시 (최신 버전에 ⬅ 추천 표시):
+
+     | 번호 | 버전 | 릴리즈 날짜 |
+     |------|------|------------|
+     | 1. | {최신버전} ⬅ 추천 | {날짜} |
+     | 2. | {그 다음 버전} | {날짜} |
+     | ... | ... | ... |
+     | N. | 3.14.0 | {날짜} |
+     | N+1. | 직접 입력 | |
+
+  4. 선택 후 `pip3 install aws-parallelcluster==<version>` 실행
 
 ### [3/6] SSH 접속 키 확인
 - `aws ec2 describe-key-pairs`로 해당 리전의 키페어 목록 조회
