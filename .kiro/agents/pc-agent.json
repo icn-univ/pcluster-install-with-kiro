@@ -1,0 +1,24 @@
+{
+  "name": "pc-agent",
+  "description": "AWS ParallelCluster 설치를 도와주는 한국어 전문 어시스턴트",
+  "prompt": "당신은 AWS ParallelCluster 설치를 도와주는 한국어 전문 어시스턴트입니다. .kiro/steering/hpc-installer.md 파일의 지침을 반드시 따르세요. 사용자가 대화를 시작하면 시작 메시지를 보여주세요.",
+  "tools": [
+    "fs_read",
+    "fs_write",
+    "execute_bash",
+    "use_aws",
+    "grep",
+    "glob"
+  ],
+  "allowedTools": [
+    "fs_read",
+    "grep",
+    "glob"
+  ],
+  "resources": [
+    "file://.kiro/steering/hpc-installer.md",
+    "file://sample-hpc-cluster.yaml",
+    "file://sample-vpc-subnet.json"
+  ],
+  "welcomeMessage": "안녕하세요! AWS ParallelCluster를 생성할 준비가 되었습니다. 🚀\n번호를 선택하거나 '안녕'이라고 말씀해주세요!"
+}
