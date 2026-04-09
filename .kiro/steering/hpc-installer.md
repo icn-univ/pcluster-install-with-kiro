@@ -148,9 +148,21 @@
   4. **중단** (다음 단계로 진행하지 않음)
 - 클러스터 스택 생성 실패:
   1. `pcluster describe-cluster --cluster-name {클러스터명} --region {리전}` 으로 실패 사유 확인
-  2. 원인을 한국어로 설명
-  3. "클러스터를 삭제하고 다시 시도하시겠습니까?" 확인
-  4. 삭제 시 `pcluster delete-cluster` 실행 후 네트워크 스택은 유지 (재사용 가능)
+  2. `aws cloudformation describe-stack-events --stack-name {클러스터명} --query "StackEvents[?ResourceStatus=='CREATE_FAILED']"` 로 상세 원인 조회
+  3. 원인을 한국어로 설명
+  4. "클러스터를 삭제하고 다시 시도하시겠습니까?" 확인
+  5. 삭제 시 `pcluster delete-cluster` 실행 후 삭제 완료 대기
+
+- **인스턴스 용량 부족(InsufficientInstanceCapacity) 시 AZ 변경 재시도 흐름**:
+  - CloudFormation 이벤트에 "insufficient capacity" 또는 "not have sufficient ... capacity" 메시지가 포함된 경우:
+  1. 에러 메시지에서 사용 가능한 AZ 목록을 추출하여 번호 선택 방식으로 제시
+  2. 사용자가 새 AZ를 선택하면:
+     a. 실패한 클러스터 삭제 (`pcluster delete-cluster`) → 삭제 완료 대기
+     b. 기존 네트워크 스택 삭제 (`aws cloudformation delete-stack --stack-name {클러스터명}-network`) → 삭제 완료 대기
+        ⚠️ 서브넷은 특정 AZ에 종속되므로, AZ가 변경되면 반드시 네트워크 스택을 재생성해야 함
+     c. 새 AZ로 네트워크 스택 재생성 (4단계)
+     d. 새 서브넷 ID로 설정 파일 업데이트 (5단계)
+     e. 클러스터 재배포 (6단계)
 
 ### 이미 존재하는 리소스
 - 같은 이름의 클러스터가 이미 존재 → "이미 '{클러스터명}' 클러스터가 있습니다. 다른 이름을 입력해주세요." 로 재입력 요청
@@ -193,9 +205,25 @@
 
 ### [4/6] 네트워크 생성
 - 모범 사례: "Head Node는 public 서브넷, 연산 서버는 private 서브넷에 배치합니다."
+- **가용영역(AZ) 선택** (프리셋/커스텀 공통):
+  1. `aws ec2 describe-availability-zones`로 현재 리전의 사용 가능한 AZ 목록을 조회
+  2. `aws ec2 describe-instance-type-offerings --location-type availability-zone --filters "Name=instance-type,Values={Compute인스턴스}"` 로 선택한 연산 인스턴스가 지원되는 AZ를 확인
+  3. 지원되는 AZ만 번호 선택 방식으로 표시하고, 첫 번째 AZ를 추천으로 표시:
+
+     가용영역(AZ)을 선택해주세요.
+     (가용영역에 따라 사용 가능한 인스턴스가 다를 수 있습니다)
+
+     | 번호 | 가용영역 | 연산 인스턴스 지원 |
+     |------|----------|-------------------|
+     | 1.   | {az-a}   | ✅ 사용 가능 ⬅ 추천 |
+     | 2.   | {az-b}   | ✅ 사용 가능 |
+     | 3.   | {az-c}   | ✅ 사용 가능 |
+
+     엔터를 누르면 추천 가용영역(1번)이 자동 선택됩니다.
+
+  4. 지원되는 AZ가 없으면 "현재 리전에서 {인스턴스}를 지원하는 가용영역이 없습니다. 다른 인스턴스 또는 리전을 선택해주세요." 안내 후 중단
 - **프리셋(1~3번)**: 기존 VPC를 사용하지 않고, 클러스터 전용 신규 VPC를 자동 생성합니다.
-  1. 가용영역(AZ) 확인: `aws ec2 describe-availability-zones`로 현재 리전의 사용 가능한 AZ 목록을 조회하고, 첫 번째 AZ를 자동 선택 (사용자에게 별도 질문하지 않음)
-  2. 신규 VPC 생성: `sample-vpc-subnet.json` CloudFormation 템플릿으로 클러스터 전용 VPC + public/private 서브넷을 생성
+  1. 신규 VPC 생성: `sample-vpc-subnet.json` CloudFormation 템플릿으로 클러스터 전용 VPC + public/private 서브넷을 생성
   ```bash
   aws cloudformation create-stack \
     --stack-name {클러스터명}-network \
@@ -204,8 +232,8 @@
       ParameterKey=AvailabilityZone,ParameterValue={AZ} \
       ParameterKey=VpcName,ParameterValue=hpc-{클러스터명}-vpc
   ```
-  3. 스택 생성 시작 후 "약 5분 정도 소요됩니다. 잠시만 기다려주세요 ⏳" 안내 문구를 출력
-  4. 스택 완료 후 Outputs에서 VpcId, PublicSubnetId, PrivateSubnetId 추출
+  2. 스택 생성 시작 후 "약 5분 정도 소요됩니다. 잠시만 기다려주세요 ⏳" 안내 문구를 출력
+  3. 스택 완료 후 Outputs에서 VpcId, PublicSubnetId, PrivateSubnetId 추출
 - **커스텀(4번)**: 기존 VPC 선택 or 새로 생성 선택
   - 새로 생성 시 동일한 CloudFormation 템플릿 사용
   - 기존 VPC 선택 시 VpcId, InternetGatewayId를 파라미터로 전달
@@ -227,7 +255,15 @@
   - FsxLustreSettings — StorageType이 FsxLustre일 때만 포함 (StorageCapacity: 1200, DeploymentType: SCRATCH_2)
   - DCV — 커스텀 8번에서 "예" 선택 시 HeadNode에 DCV 블록 포함
 - 공통 설정: Scheduler slurm, Queue 이름 compute, MinCount 0, RootVolume gp3, SSM 정책
-- 생성 후 주요 설정 요약을 한국어로 출력하고 확인 (Y/n)
+- 생성 후 주요 설정 요약을 한국어로 출력
+- 이어서 6단계 배포 흐름을 2~3줄로 짧게 안내한 뒤 확인 (Y/n):
+  ```
+  이제 6단계로 클러스터를 배포합니다.
+  AWS 계정 확인 → pcluster 설치 확인 → SSH 키 준비 → 네트워크 생성 → 설정 파일 생성 → 클러스터 배포
+  대부분 자동으로 진행되고, 중간에 확인이 필요한 부분만 여쭤볼게요. 전체 약 15~20분 소요됩니다.
+
+  진행할까요? (Y/n)
+  ```
 
 ### [6/6] 클러스터 배포
 - `pcluster create-cluster --cluster-name {이름} --cluster-configuration {이름}-config.yaml` 실행
@@ -243,11 +279,24 @@
   - 주의: pcluster CLI는 aws CLI와 다르므로 `--output json` 옵션을 사용하지 않는다 (pcluster는 기본 JSON 출력)
   - 주의: pcluster 출력을 파이프할 때 `RequestsDependencyWarning` 경고가 stdout에 섞일 수 있으므로, `2>/dev/null`로 stderr를 제거하거나 `grep -v Warning` 등으로 필터링한다
 - `CREATE_COMPLETE` 시 (반드시 {이름}, {키페어}를 실제 값으로 치환하여 표시):
+  - `pcluster describe-cluster` 결과에서 클러스터 요약 정보를 테이블로 표시:
+  ```
+  | 항목 | 값 |
+  |------|-----|
+  | 클러스터 이름 | {이름} |
+  | 상태 | CREATE_COMPLETE |
+  | 리전 / AZ | {리전} / {가용영역} |
+  | Head Node | {HeadNode인스턴스} ({인스턴스ID}) |
+  | Head Node IP | {PublicIP} |
+  | Compute Node | {Compute인스턴스} × 최대 {MaxCount}대 |
+  | 공유 스토리지 | {스토리지타입} (/shared) |
+  ```
+  - 이어서 접속 안내:
   ```
   ✅ 클러스터가 준비되었습니다!
 
   클러스터에 접속하려면:
-     pcluster ssh --cluster-name {이름} -i ./{키페어}.pem
+     pcluster ssh --cluster-name {이름} --region {리전} -i ./{키페어}.pem
 
   📋 접속 후 클러스터를 간단히 확인해보세요:
      sinfo              — 파티션 및 노드 상태 확인
