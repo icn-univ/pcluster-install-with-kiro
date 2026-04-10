@@ -242,6 +242,11 @@
       ParameterKey=VpcName,ParameterValue=hpc-{클러스터명}-vpc
   ```
   2. 스택 생성 시작 후 "약 5분 정도 소요됩니다. 잠시만 기다려주세요 ⏳" 안내 문구를 출력
+     ```
+     💡 AWS 콘솔에서도 진행 현황을 확인할 수 있습니다:
+        👉 https://console.aws.amazon.com/cloudformation/home?region={리전}
+        스택 이름 "{클러스터명}-network"의 이벤트 탭에서 실시간 상태를 볼 수 있습니다.
+     ```
   3. 스택 완료 후 Outputs에서 VpcId, PublicSubnetId, PrivateSubnetId 추출
 - **커스텀(4번)**: 먼저 네트워크 선택지를 제시합니다.
 
