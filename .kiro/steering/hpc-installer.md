@@ -256,7 +256,7 @@
   | 2. | 기존 HPC용 VPC 재사용 |
 
   - **1번 선택**: AZ 선택 후 프리셋과 동일하게 신규 VPC 생성
-  - **2번 선택**: `*-network` 패턴의 CloudFormation 스택을 조회하여 스택 이름, 생성일, VPC 이름, 가용영역을 테이블로 표시:
+  - **2번 선택**: `aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE`로 전체 스택을 조회한 뒤, 스택 이름이 `-network`로 끝나는 것만 필터링하여 스택 이름, 생성일, VPC 이름, 가용영역을 테이블로 표시:
 
      | 번호 | 스택 이름 | 생성일 | VPC 이름 | 가용영역 |
      |------|----------|--------|----------|---------|
