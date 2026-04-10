@@ -13,6 +13,11 @@ HeadNode:
   Iam:
     AdditionalIamPolicies:
       - Policy: arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  # DCV: 커스텀 8번에서 "예" 선택 시 아래 블록 포함
+  # Dcv:
+  #   Enabled: true
+  #   Port: 8443
+  #   AllowedIps: 0.0.0.0/0
 Scheduling:
   Scheduler: slurm
   SlurmQueues:

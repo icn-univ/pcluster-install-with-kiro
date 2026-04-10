@@ -60,6 +60,7 @@
 | PlacementGroup | 미사용 | Enabled | 미사용 |
 | SharedStorage | Efs | FsxLustre 1.2TB | FsxLustre 1.2TB |
 | OS | alinux2 | alinux2 | alinux2 |
+| DCV | 미사용 | 미사용 | 미사용 |
 
 ## 커스텀 선택 시 (4번)
 아래 질문을 순서대로 진행합니다:
